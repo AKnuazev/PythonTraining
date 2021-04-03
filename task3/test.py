@@ -1,74 +1,46 @@
-from multiprocessing import Pool
-import csv
-from datetime import datetime
-import requests
-from bs4 import BeautifulSoup
+from multiprocessing import Pool, TimeoutError
+import time
+import os
 
+def y():
+    return True
 
-def get_html(url):
-    response = requests.get(url)
-    return response.text
-
-
-def get_all_links(html):
-    soup = BeautifulSoup(html, 'lxml')
-    tds = soup.find('table', id='currencies-all').find_all('td', class_='currency-name')
-    links = []
-    for td in tds:
-        a = td.find('a', class_='currency-name-container').get('href')
-        link = 'https://coinmarketcap.com' + a
-        links.append(link)
-    return links
-
-
-def text_before_word(text, word):
-    line = text.split(word)[0].strip()
-    return line
-
-
-def get_page_data(html):
-    soup = BeautifulSoup(html, 'lxml')
-    try:
-        name = text_before_word(soup.find('title').text, 'price')
-    except:
-        name = ''
-    try:
-        price = text_before_word(soup.find('div',
-                                           class_='col-xs-6 col-sm-8 col-md-4 text-left').text, 'USD')
-    except:
-        price = ''
-    data = {'name': name,
-            'price': price}
-    return data
-
-
-def write_csv(data):
-    with open('coinmarketcap.csv', 'a') as f:
-        writer = csv.writer(f)
-        writer.writerow((data['name'],
-                         data['price']))
-        print(data['name'], 'parsed')
-
-
-def make_all(link):
-    html = get_html(link)
-    data = get_page_data(html)
-    write_csv(data)
-
-
-def main():
-    start = datetime.now()
-    url = 'https://coinmarketcap.com/all/views/all'
-    all_links = get_all_links(get_html(url))
-
-    with Pool(40) as p:
-        p.map(make_all, all_links)
-
-    end = datetime.now()
-    total = end - start
-    print(str(total))
-    a = input()
-
+def f(x):
+    return x*x
+def d():
+    return True
 
 if __name__ == '__main__':
-    main()
+    # start 4 worker processes
+    with Pool(processes=4) as pool:
+
+        # print "[0, 1, 4,..., 81]"
+        print(pool.map(f, range(10)))
+
+        # print same numbers in arbitrary order
+        for i in pool.imap_unordered(f, range(10)):
+            print(i)
+
+        # evaluate "f(20)" asynchronously
+        res = pool.apply_async(f, (20,))      # runs in *only* one process
+        print(res.get(timeout=1))             # prints "400"
+
+        # evaluate "os.getpid()" asynchronously
+        res = pool.apply_async(os.getpid, ()) # runs in *only* one process
+        print(res.get(timeout=1))             # prints the PID of that process
+
+        # launching multiple evaluations asynchronously *may* use more processes
+        multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
+        print([res.get(timeout=1) for res in multiple_results])
+
+        # make a single worker sleep for 10 secs
+        res = pool.apply_async(time.sleep, (10,))
+        try:
+            print(res.get(timeout=1))
+        except TimeoutError:
+            print("We lacked patience and got a multiprocessing.TimeoutError")
+
+        print("For the moment, the pool remains available for more work")
+
+    # exiting the 'with'-block has stopped the pool
+    print("Now the pool is closed and no longer available")

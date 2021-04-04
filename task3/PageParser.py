@@ -203,8 +203,7 @@ def main():
     print("Welcome to Google Play Store parsing app")
     print("-------------------------------------------\n")
     print("Enter a keyword to search for applications:")
-    # keyword = input()
-    keyword = "facebook"
+    keyword = input()
 
     URL = "https://play.google.com/store/search?q=" + keyword + "&c=apps"
     html = get_page_html(URL)

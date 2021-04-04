@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from threading import Thread, Lock
-from multiprocessing import Pool
 from time import time, sleep
 from math import ceil
 
